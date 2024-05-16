@@ -1,12 +1,11 @@
 package com.xiaojinzi.component.impl.interceptor
 
 import com.xiaojinzi.component.Component.requiredConfig
-import com.xiaojinzi.component.impl.RouterInterceptor
 import com.xiaojinzi.component.error.ignore.NavigationException
+import com.xiaojinzi.component.impl.RouterInterceptor
 import com.xiaojinzi.component.impl.RouterResult
-import java.lang.Exception
-import java.util.ArrayList
-import java.util.HashMap
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.absoluteValue
 
 /**
  * 这个拦截器必须在其他任何一个拦截器之前执行
@@ -21,7 +20,7 @@ import java.util.HashMap
  */
 object OpenOnceInterceptor : RouterInterceptor {
 
-    private val map: MutableMap<String, Long> = HashMap()
+    private val map: MutableMap<String, Long> = ConcurrentHashMap()
 
     @Throws(Exception::class)
     override suspend fun intercept(chain: RouterInterceptor.Chain): RouterResult {
@@ -34,7 +33,8 @@ object OpenOnceInterceptor : RouterInterceptor {
         // 调试的情况下可能会失效,因为你断点打到这里慢慢的往下走那么可能时间已经过了一秒,就失去了限制的作用
         val currentTime = System.currentTimeMillis()
         // 如果之前有了并且时间少于一定的时间
-        if (map.containsKey(hostAndPath) && currentTime - map[hostAndPath]!! < requiredConfig().routeRepeatCheckDuration) {
+        val preValue = map[hostAndPath]?: 0
+        if ((currentTime - preValue).absoluteValue < requiredConfig().routeRepeatCheckDuration) {
             throw NavigationException("same request can't launch twice in a second, target uri is：$uri")
         } else {
             map[hostAndPath] = currentTime

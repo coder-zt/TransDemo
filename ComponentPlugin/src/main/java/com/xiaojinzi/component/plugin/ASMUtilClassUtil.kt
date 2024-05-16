@@ -33,6 +33,7 @@ object ASMUtilClassUtil {
         }
         getModuleNamesMethodBodySb.append("return list;")
         getModuleNamesMethodBodySb.append("}")
+
         getModuleNamesMethod.setBody(
             getModuleNamesMethodBodySb.toString()
         )
