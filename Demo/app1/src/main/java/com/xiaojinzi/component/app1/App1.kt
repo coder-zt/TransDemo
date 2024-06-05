@@ -1,6 +1,7 @@
 package com.xiaojinzi.component.app1
 
 import android.app.Application
+import android.content.Context
 import com.xiaojinzi.component.Component
 import com.xiaojinzi.component.Config
 import com.xiaojinzi.component.impl.ActivityResultRouterResult
@@ -19,6 +20,11 @@ import com.xiaojinzi.support.ktx.LogSupport
  * ttt
  */
 class App1 : Application() {
+
+    override fun attachBaseContext(base: Context?) {
+        super.attachBaseContext(base)
+        LogSupport.logAble = true
+    }
 
     override fun onCreate() {
         super.onCreate()
