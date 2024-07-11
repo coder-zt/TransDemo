@@ -28,6 +28,7 @@ import com.xiaojinzi.component.impl.*
 import com.xiaojinzi.component.support.CallbackAdapter
 import com.xiaojinzi.support.ktx.*
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @InternalCoroutinesApi
@@ -68,7 +69,7 @@ private fun TestRouteView() {
 
                             override fun onError(errorResult: RouterErrorResult) {
                                 super.onError(errorResult)
-                                Toast.makeText(app, "路由错误", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(app, "路由错误: ${errorResult.error.message}", Toast.LENGTH_SHORT).show()
                             }
 
                             override fun onEvent(
@@ -89,11 +90,55 @@ private fun TestRouteView() {
                         callback = object : CallbackAdapter() {
                             override fun onCancel(originalRequest: RouterRequest?) {
                                 super.onCancel(originalRequest)
-                                Toast.makeText(app, "路由被取消", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(app, "路由被取消, originalRequest 是否为空?: ${originalRequest == null}", Toast.LENGTH_SHORT).show()
                             }
                         }
                     )
                 context.tryFinishActivity()
+            }
+            ActionButton(text = "跳转获取 Activity, 一秒后取消") {
+                Router
+                    .withApi(apiClass = RouterApi::class)
+                    .toTestActivityResultView1(
+                        context = context,
+                        object : BiCallback.BiCallbackAdapter<ActivityResult>() {
+                            override fun onSuccess(
+                                result: RouterResult,
+                                targetValue: ActivityResult
+                            ) {
+                                super.onSuccess(result, targetValue)
+                                Toast.makeText(
+                                    app,
+                                    "获取目标界面的 ActivityResult 成功, 返回信息为：${
+                                        targetValue.data?.getStringExtra("data")
+                                    }",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            override fun onError(errorResult: RouterErrorResult) {
+                                super.onError(errorResult)
+                                Toast.makeText(
+                                    app,
+                                    "获取目标界面的 ActivityResult 失败, 失败信息为：${errorResult.error.message}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            override fun onCancel(originalRequest: RouterRequest?) {
+                                super.onCancel(originalRequest)
+                                Toast.makeText(
+                                    app,
+                                    "获取目标界面的 ActivityResult 被取消",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    )
+                scope.launch {
+                    delay(1000)
+                    context.tryFinishActivity()
+                }
             }
             ActionButton(text = "测试关闭自动取消") {
                 Router.with(context = context)

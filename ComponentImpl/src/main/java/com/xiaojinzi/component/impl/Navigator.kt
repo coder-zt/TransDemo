@@ -21,7 +21,6 @@ import com.xiaojinzi.component.anno.router.RequestCodeAnno
 import com.xiaojinzi.component.anno.support.*
 import com.xiaojinzi.component.bean.ActivityResult
 import com.xiaojinzi.component.bean.InterceptorThreadType
-import com.xiaojinzi.component.error.ignore.ActivityResultException
 import com.xiaojinzi.component.error.ignore.InterceptorNotFoundException
 import com.xiaojinzi.component.error.ignore.NavigationCancelException
 import com.xiaojinzi.component.error.ignore.NavigationException
@@ -31,7 +30,6 @@ import com.xiaojinzi.component.impl.interceptor.OpenOnceInterceptor
 import com.xiaojinzi.component.support.*
 import kotlinx.coroutines.*
 import java.util.*
-import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.reflect.KClass
@@ -43,7 +41,6 @@ import kotlin.reflect.KClass
  * @param mInterceptors 拦截器列表,所有要执行的拦截器列表
  * @param mIndex        拦截器的下标
  * @param mRequest      第一次这个对象是不需要的
- * @param mCallback     这个是拦截器的回调,这个用户不能自定义,一直都是一个对象
  */
 open class InterceptorChain(
     private val mInterceptors: List<RouterInterceptor?>,
@@ -60,7 +57,7 @@ open class InterceptorChain(
     private val defaultContext by lazy {
         when (Component.requiredConfig().interceptorDefaultThread) {
             InterceptorThreadType.IO -> Dispatchers.IO
-            InterceptorThreadType.Main -> Dispatchers.Main
+            InterceptorThreadType.Main -> Dispatchers.Main.immediate
         }
     }
 
@@ -120,7 +117,7 @@ open class InterceptorChain(
                             if (
                                 interceptor.javaClass.isAnnotationPresent(MainThread::class.java)
                             ) {
-                                withContext(context = Dispatchers.Main) {
+                                withContext(context = Dispatchers.Main.immediate) {
                                     // 用户自定义的部分
                                     interceptor.intercept(chain = next)
                                 }
@@ -183,7 +180,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
         private val r = Random()
 
         /**
-         * 如果 requestCode 是 [Navigator.RANDOM_REQUEST_CODE].
+         * 如果 requestCode 是 [RANDOM_REQUEST_CODE].
          * 则随机生成一个 requestCode
          * 生成的 requestCode 会在 Activity 或者 Activity 内 的Fragment 范围内是唯一的
          *
@@ -487,6 +484,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
     }
 
     companion object {
+
         /**
          * requestCode 如果等于这个值,就表示是随机生成的
          * 从 1-256 中随机生成一个,如果生成的正好是目前正在用的,会重新生成一个
@@ -522,6 +520,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
                 }
             }
         }
+
     }
 
     /**
@@ -759,13 +758,11 @@ class NavigatorImpl<T : INavigator<T>> constructor(
                                     )
                                 }
 
-                                override fun onActivityResultFail() {
+                                override fun onActivityResultCancel() {
                                     Help.removeRequestCode(request = originalRequest)
-                                    callback.onError(
-                                        errorResult = RouterErrorResult(
-                                            originalRequest = originalRequest,
-                                            error = ActivityResultException(message = "activity result is fail")
-                                        )
+                                    RouterUtil.activityResultCancelCallback(
+                                        request = originalRequest,
+                                        callback = callback,
                                     )
                                 }
 
@@ -832,7 +829,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
     @Synchronized // 方法加锁
     @CoreLogicAnno(
         value = "这是普通跳转转化为 Callback 并且返回可取消对象的核心方法, " +
-                "也是对外提供的路由中最核心的方法. 其他的路由方法基本都是基于此方法"
+                "也是对外提供的路由中最核心的方法. 其他的路由方法基本都是基于此方法",
     )
     override fun navigate(@UiThread callback: Callback?): NavigationDisposable {
         // 可取消对象, 默认主线程
@@ -841,6 +838,15 @@ class NavigatorImpl<T : INavigator<T>> constructor(
             scope = scope,
         )
         var originalRequest: RouterRequest? = null
+        // 是否触发了回调
+        var isCallback = false
+        // 参数是真的要执行的回调, 这样子可以把模板给抽出来
+        val callBackInvoke: (() -> Unit) -> Unit = {
+            if (!isCallback) {
+                it.invoke()
+            }
+            isCallback = true
+        }
         scope.launch(context = Dispatchers.Main.immediate) {
             try {
                 // 如果用户没填写 Context 或者 Fragment 默认使用 Application
@@ -860,55 +866,76 @@ class NavigatorImpl<T : INavigator<T>> constructor(
                 isFinish = true
                 // 生成路由请求对象
                 originalRequest = build()
-                originalRequest?.let {
-                    val routerResult: RouterResult = navigateWithAutoCancel(originalRequest = it)
-                    // 如果是框架帮拿 ActivityResult, 那么此次路由是没有结束的, 不需要回调
-                    if (originalRequest?.isForResult == false) {
-                        RouterUtil.successCallback(
-                            callback = callback,
-                            successResult = routerResult,
-                        )
-                    } else {
-                        callback?.onSuccess(
-                            result = routerResult,
-                        )
+                originalRequest!!.let { request ->
+                    val routerResult: RouterResult =
+                        navigateWithAutoCancel(originalRequest = request)
+                    callBackInvoke.invoke {
+                        // 如果是框架帮拿 ActivityResult, 那么此次路由是没有结束的, 不需要回调
+                        if (request.isForResult) {
+                            callback?.onSuccess(
+                                result = routerResult,
+                            )
+                        } else {
+                            RouterUtil.successCallback(
+                                callback = callback,
+                                successResult = routerResult,
+                            )
+                        }
                     }
                 }
-            } catch (e: NavigationCancelException) {
-                RouterUtil.cancelCallback(
-                    request = e.originalRequest,
-                    callback = callback,
-                )
-            } catch (e: NavigationException) {
-                RouterUtil.errorCallback(
-                    callback = callback,
-                    errorResult = RouterErrorResult(
-                        originalRequest = originalRequest,
-                        error = e,
-                    )
-                )
-            } catch (e: Exception) {
-                RouterUtil.errorCallback(
-                    callback = callback,
-                    errorResult = RouterErrorResult(
-                        originalRequest = originalRequest,
-                        error = e,
-                    )
-                )
-            }
-        }.invokeOnCompletion { error ->
-            when (error) {
-                is CancellationException -> {
+            } catch (e: CancellationException) {
+                callBackInvoke.invoke {
                     RouterUtil.cancelCallback(
                         request = originalRequest,
                         callback = callback,
                     )
+                }
+            } catch (e: NavigationCancelException) {
+                callBackInvoke.invoke {
+                    RouterUtil.cancelCallback(
+                        request = e.originalRequest,
+                        callback = callback,
+                    )
+                }
+            } catch (e: NavigationException) {
+                callBackInvoke.invoke {
+                    RouterUtil.errorCallback(
+                        callback = callback,
+                        errorResult = RouterErrorResult(
+                            originalRequest = originalRequest,
+                            error = e,
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                callBackInvoke.invoke {
+                    RouterUtil.errorCallback(
+                        callback = callback,
+                        errorResult = RouterErrorResult(
+                            originalRequest = originalRequest,
+                            error = e,
+                        )
+                    )
+                }
+            }
+        }.invokeOnCompletion { error ->
+            when (error) {
+                is CancellationException -> {
+                    callBackInvoke.invoke {
+                        RouterUtil.cancelCallback(
+                            request = originalRequest,
+                            callback = callback,
+                        )
+                    }
                 }
             }
         }
         return navigationDisposable
     }
 
+    /**
+     * 这个就是跳转, 没有 [ActivityResult] 相关的实现
+     */
     @CheckResult
     @Throws(NavigationException::class)
     @CoreLogicAnno(value = "这是自动取消功能的核心实现")
@@ -919,7 +946,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
         val scope = (actScope ?: fragScope)
         return if (scope != null && originalRequest.autoCancel) {
             suspendCancellableCoroutine { cancellableContinuation ->
-                val job = scope.launch(context = Dispatchers.IO) {
+                val job = scope.launch(context = Dispatchers.Main.immediate) {
                     try {
                         val result = navigateCore(
                             originalRequest = originalRequest,
@@ -963,7 +990,6 @@ class NavigatorImpl<T : INavigator<T>> constructor(
      *
      * @param originalRequest           最原始的请求对象
      * @param customInterceptors        自定义的拦截器
-     * @param routerInterceptorCallback 回调对象
      * @return 返回值是：[RouterResult]
      */
     @RunInWorkThread
@@ -973,8 +999,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
         originalRequest: RouterRequest,
         customInterceptors: List<Any>?,
     ): RouterResult {
-
-        return withContext(context = Dispatchers.IO) {
+        return withContext(context = Dispatchers.Main.immediate) {
             // 自定义拦截器,初始化拦截器的个数 8 个够用应该不会经常扩容
             val allInterceptors: MutableList<RouterInterceptor> = ArrayList(10)
 

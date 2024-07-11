@@ -23,6 +23,8 @@ interface Callback : OnRouterSuccess, OnRouterError, OnRouterCancel {
 
     override fun onError(errorResult: RouterErrorResult)
 
+    override fun onCancel(originalRequest: RouterRequest?)
+
     /**
      * 两个参数肯定有一个不会为空
      *
@@ -30,8 +32,6 @@ interface Callback : OnRouterSuccess, OnRouterError, OnRouterCancel {
      * @param errorResult   发生的错误对象
      */
     @UiThread
-    fun onEvent(successResult: RouterResult?, errorResult: RouterErrorResult?)
-
-    override fun onCancel(originalRequest: RouterRequest?)
+    fun onEvent(successResult: RouterResult? = null, errorResult: RouterErrorResult? = null)
 
 }

@@ -4,7 +4,12 @@ import androidx.annotation.AnyThread
 import androidx.annotation.UiThread
 import com.xiaojinzi.component.bean.ActivityResult
 import com.xiaojinzi.component.error.RouterRuntimeException
-import com.xiaojinzi.component.support.*
+import com.xiaojinzi.component.support.LogUtil
+import com.xiaojinzi.component.support.OnRouterCancel
+import com.xiaojinzi.component.support.Utils
+import com.xiaojinzi.component.support.executeAfterActivityResultRouteSuccessAction
+import com.xiaojinzi.component.support.executeAfterRouteErrorAction
+import com.xiaojinzi.component.support.executeAfterRouteSuccessAction
 
 object RouterUtil {
 
@@ -24,13 +29,16 @@ object RouterUtil {
                 callback
             )
         }
-        deliveryListener(cancelRequest = request)
+        deliveryListener(
+            cancelRequest = request,
+            isActivityNormalCancel = true,
+        )
     }
 
     @UiThread
     private fun cancelCallbackOnMainThread(
         request: RouterRequest?,
-        callback: OnRouterCancel?
+        callback: OnRouterCancel?,
     ) {
         if (request == null) {
             LogUtil.log(TAG, "route canceled, request is null!")
@@ -63,7 +71,7 @@ object RouterUtil {
     private fun errorCallbackOnMainThread(
         callback: Callback?,
         biCallback: BiCallback<*>?,
-        errorResult: RouterErrorResult
+        errorResult: RouterErrorResult,
     ) {
         if (errorResult.originalRequest == null) {
             LogUtil.log(
@@ -99,9 +107,40 @@ object RouterUtil {
     }
 
     @AnyThread
+    fun activityResultCancelCallback(
+        request: RouterRequest?,
+        callback: OnRouterCancel,
+    ) {
+        Utils.postActionToMainThreadAnyway {
+            activityResultCancelCallbackOnMainThread(
+                request = request,
+                callback = callback
+            )
+        }
+        deliveryListener(
+            isActivityResultCancel = true,
+            cancelRequest = request,
+        )
+    }
+
+    @UiThread
+    fun activityResultCancelCallbackOnMainThread(
+        request: RouterRequest?,
+        callback: OnRouterCancel?,
+    ) {
+        LogUtil.log(
+            TAG,
+            "route activityResult cancel：${request?.uri?.toString() ?: ""}"
+        )
+        callback?.onCancel(
+            originalRequest = request,
+        )
+    }
+
+    @AnyThread
     fun activityResultSuccessCallback(
         callback: BiCallback<ActivityResult>?,
-        successResult: ActivityResultRouterResult
+        successResult: ActivityResultRouterResult,
     ) {
         Utils.postActionToMainThreadAnyway {
             activityResultSuccessCallbackOnMainThread(
@@ -115,7 +154,7 @@ object RouterUtil {
     @UiThread
     fun activityResultSuccessCallbackOnMainThread(
         callback: BiCallback<ActivityResult>?,
-        successResult: ActivityResultRouterResult
+        successResult: ActivityResultRouterResult,
     ) {
         LogUtil.log(
             TAG,
@@ -138,10 +177,12 @@ object RouterUtil {
     @AnyThread
     fun successCallback(
         callback: Callback?,
-        successResult: RouterResult
+        successResult: RouterResult,
     ) {
         Utils.postActionToMainThreadAnyway { successCallbackOnMainThread(callback, successResult) }
-        deliveryListener(successResult, null, null)
+        deliveryListener(
+            successResult = successResult,
+        )
     }
 
     @UiThread
@@ -169,6 +210,8 @@ object RouterUtil {
     fun deliveryListener(
         successResult: RouterResult? = null,
         activityResultRouterResult: ActivityResultRouterResult? = null,
+        isActivityNormalCancel: Boolean = false,
+        isActivityResultCancel: Boolean = false,
         errorResult: RouterErrorResult? = null,
         cancelRequest: RouterRequest? = null,
     ) {
@@ -176,6 +219,8 @@ object RouterUtil {
             deliveryListenerOnMainThread(
                 successResult = successResult,
                 activityResultRouterResult = activityResultRouterResult,
+                isActivityNormalCancel = isActivityNormalCancel,
+                isActivityResultCancel = isActivityResultCancel,
                 errorResult = errorResult,
                 cancelRequest = cancelRequest,
             )
@@ -186,22 +231,29 @@ object RouterUtil {
     fun deliveryListenerOnMainThread(
         successResult: RouterResult? = null,
         activityResultRouterResult: ActivityResultRouterResult? = null,
+        isActivityNormalCancel: Boolean = false,
+        isActivityResultCancel: Boolean = false,
         errorResult: RouterErrorResult? = null,
         cancelRequest: RouterRequest? = null,
     ) {
         for (listener in Router.routerListeners) {
             try {
                 if (successResult != null) {
-                    listener.onSuccess(successResult)
+                    listener.onSuccess(successResult = successResult)
                 }
                 if (activityResultRouterResult != null) {
                     listener.onActivityResultSuccess(successResult = activityResultRouterResult)
                 }
                 if (errorResult != null) {
-                    listener.onError(errorResult)
+                    listener.onError(errorResult = errorResult)
                 }
-                if (cancelRequest != null) {
-                    listener.onCancel(cancelRequest)
+                // 是否是获取 ActivityResult 的那种取消
+                if (isActivityResultCancel) {
+                    listener.onActivityResultCancel(
+                        originalRequest = cancelRequest,
+                    )
+                } else if (isActivityNormalCancel) {
+                    listener.onCancel(originalRequest = cancelRequest)
                 }
             } catch (ignore: Exception) {
                 // do nothing

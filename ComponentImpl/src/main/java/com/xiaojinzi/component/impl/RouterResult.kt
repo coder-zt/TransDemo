@@ -1,6 +1,7 @@
 package com.xiaojinzi.component.impl
 
 import android.content.Intent
+import androidx.annotation.Keep
 import com.xiaojinzi.component.support.Utils
 
 /**
@@ -9,8 +10,8 @@ import com.xiaojinzi.component.support.Utils
  *
  * @author : xiaojinzi
  */
-data class
-RouterResult @JvmOverloads constructor(
+@Keep
+data class RouterResult @JvmOverloads constructor(
 
     /**
      * 最原始的请求,谁都更改不了的,而且不可能为空在这里

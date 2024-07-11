@@ -78,6 +78,13 @@ class App1 : Application() {
                     )
                 }
 
+                override fun onActivityResultCancel(originalRequest: RouterRequest?) {
+                    LogSupport.d(
+                        tag = "RouterListener",
+                        content = "onActivityResultCancel, url = ${originalRequest?.uri}"
+                    )
+                }
+
                 override fun onError(errorResult: RouterErrorResult) {
                     LogSupport.d(
                         tag = "RouterListener",
@@ -85,10 +92,10 @@ class App1 : Application() {
                     )
                 }
 
-                override fun onCancel(originalRequest: RouterRequest) {
+                override fun onCancel(originalRequest: RouterRequest?) {
                     LogSupport.d(
                         tag = "RouterListener",
-                        content = "onCancel, url = ${originalRequest.uri}"
+                        content = "onCancel, url = ${originalRequest?.uri}"
                     )
                 }
             }

@@ -11,7 +11,7 @@ import com.xiaojinzi.component.support.Utils.checkNullPointer
  *
  * @see Component.init
  */
-class Config constructor(builder: Builder = Builder()) {
+class Config(builder: Builder = Builder()) {
 
     val defaultScheme: String
     val isErrorCheck: Boolean

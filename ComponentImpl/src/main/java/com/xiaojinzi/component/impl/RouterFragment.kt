@@ -32,10 +32,10 @@ class RouterFragment : Fragment() {
             fun onActivityResultSuccess(activityResult: ActivityResult)
 
             /**
-             * 失败的回调
+             * 取消的回调
              * 实际上就是配置更改导致 Activity 重建, 那么释放的时候会调用这个方法
              */
-            fun onActivityResultFail()
+            fun onActivityResultCancel()
 
         }
 
@@ -77,7 +77,7 @@ class RouterFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         singleEmitterMap.values.forEach {
-            it.onActivityResultFail()
+            it.onActivityResultCancel()
         }
         singleEmitterMap.clear()
     }
