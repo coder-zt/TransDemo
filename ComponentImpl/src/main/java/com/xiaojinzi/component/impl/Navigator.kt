@@ -200,9 +200,9 @@ class NavigatorImpl<T : INavigator<T>> constructor(
             // 如果生成的这个 requestCode 存在,就重新生成
             while (
                 isExist(
-                    targetActivity,
-                    requestBuilder.fragment,
-                    generateRequestCode
+                    act = targetActivity,
+                    fragment = requestBuilder.fragment,
+                    requestCode = generateRequestCode,
                 )
             ) {
                 generateRequestCode = r.nextInt(256) + 1
@@ -243,7 +243,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
         fun isExist(
             act: Activity?,
             fragment: Fragment?,
-            requestCode: Int
+            requestCode: Int,
         ): Boolean {
             if (act != null) {
                 return mRequestCodeSet.contains(act.javaClass.name + requestCode)
