@@ -1,5 +1,7 @@
 package com.xiaojinzi.component.error.ignore
 
+import androidx.annotation.Keep
+
 /**
  * 表示 Activity result 异常
  *
@@ -7,4 +9,5 @@ package com.xiaojinzi.component.error.ignore
  *
  * @author : xiaojinzi
  */
-class ActivityResultException(message: String?) : RuntimeException(message)
+@Keep
+class ActivityResultException(message: String? = null) : RuntimeException(message)

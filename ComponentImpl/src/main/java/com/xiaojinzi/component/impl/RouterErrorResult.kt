@@ -1,10 +1,13 @@
 package com.xiaojinzi.component.impl
 
+import androidx.annotation.Keep
+
 /**
  * 标识路由错误的时候的回调参数
  *
  * @author xiaojinzi
  */
+@Keep
 data class RouterErrorResult(
 
     /**

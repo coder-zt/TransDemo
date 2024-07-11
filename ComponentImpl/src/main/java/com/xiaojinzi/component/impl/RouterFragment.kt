@@ -22,12 +22,26 @@ import com.xiaojinzi.component.bean.ActivityResult
  */
 class RouterFragment : Fragment() {
 
-    private val singleEmitterMap: MutableMap<RouterRequest, (ActivityResult) -> Unit> = HashMap()
+    companion object {
 
-    override fun onDestroy() {
-        super.onDestroy()
-        singleEmitterMap.clear()
+        interface OnActivityResultCallback {
+
+            /**
+             * 成功的回调
+             */
+            fun onActivityResultSuccess(activityResult: ActivityResult)
+
+            /**
+             * 失败的回调
+             * 实际上就是配置更改导致 Activity 重建, 那么释放的时候会调用这个方法
+             */
+            fun onActivityResultFail()
+
+        }
+
     }
+
+    private val singleEmitterMap: MutableMap<RouterRequest, OnActivityResultCallback> = HashMap()
 
     /**
      * 此方法我觉得官方不应该废弃的. 因为新的方式其实在易用性上并不好.
@@ -41,32 +55,36 @@ class RouterFragment : Fragment() {
      */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
-        // 根据 requestCode 获取发射器
-        var findRequest: RouterRequest? = null
         // 找出 requestCode 一样的那个
-        val keySet: Set<RouterRequest> = singleEmitterMap.keys
-        for (request in keySet) {
-            if (request.requestCode != null && request.requestCode == requestCode) {
-                findRequest = request
-                break
-            }
-        }
-        if (findRequest != null) {
-            singleEmitterMap[findRequest]?.let {
-                try {
-                    it.invoke(ActivityResult(requestCode, resultCode, data))
-                } catch (ignore: Exception) {
-                    // ignore
+        singleEmitterMap
+            .keys
+            .find { request ->
+                request.requestCode != null && request.requestCode == requestCode
+            }?.let { findRequest ->
+                singleEmitterMap[findRequest]?.let {
+                    try {
+                        it.onActivityResultSuccess(
+                            activityResult = ActivityResult(requestCode, resultCode, data)
+                        )
+                    } catch (ignore: Exception) {
+                        // ignore
+                    }
                 }
+                singleEmitterMap.remove(findRequest)
             }
-            singleEmitterMap.remove(findRequest)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        singleEmitterMap.values.forEach {
+            it.onActivityResultFail()
         }
+        singleEmitterMap.clear()
     }
 
     fun addActivityResultConsumer(
         request: RouterRequest,
-        consumer: (ActivityResult) -> Unit,
+        consumer: OnActivityResultCallback,
     ) {
         // 检测是否重复的在这个方法调用之前被检查掉了
         singleEmitterMap[request] = consumer

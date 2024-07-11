@@ -21,14 +21,17 @@ import com.xiaojinzi.component.anno.router.RequestCodeAnno
 import com.xiaojinzi.component.anno.support.*
 import com.xiaojinzi.component.bean.ActivityResult
 import com.xiaojinzi.component.bean.InterceptorThreadType
+import com.xiaojinzi.component.error.ignore.ActivityResultException
 import com.xiaojinzi.component.error.ignore.InterceptorNotFoundException
 import com.xiaojinzi.component.error.ignore.NavigationCancelException
 import com.xiaojinzi.component.error.ignore.NavigationException
+import com.xiaojinzi.component.impl.RouterFragment.Companion.OnActivityResultCallback
 import com.xiaojinzi.component.impl.interceptor.InterceptorCenter
 import com.xiaojinzi.component.impl.interceptor.OpenOnceInterceptor
 import com.xiaojinzi.component.support.*
 import kotlinx.coroutines.*
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.reflect.KClass
@@ -740,21 +743,36 @@ class NavigatorImpl<T : INavigator<T>> constructor(
                 navigate(object : CallbackAdapter() {
                     override fun onSuccess(result: RouterResult) {
                         super.onSuccess(result)
-                        val request = result.originalRequest
+                        val originalRequest = result.originalRequest
+                        // 添加 Activity 回调的监听
                         rxFragment.addActivityResultConsumer(
-                            request = request,
-                        ) { activityResult ->
-                            Help.removeRequestCode(request = request)
-                            RouterUtil.activityResultSuccessCallback(
-                                callback = callback,
-                                successResult = ActivityResultRouterResult(
-                                    routerResult = result,
-                                    activityResult = activityResult,
-                                ),
-                            )
-                        }
+                            request = originalRequest,
+                            consumer = object : OnActivityResultCallback {
+                                override fun onActivityResultSuccess(activityResult: ActivityResult) {
+                                    Help.removeRequestCode(request = originalRequest)
+                                    RouterUtil.activityResultSuccessCallback(
+                                        callback = callback,
+                                        successResult = ActivityResultRouterResult(
+                                            routerResult = result,
+                                            activityResult = activityResult,
+                                        ),
+                                    )
+                                }
+
+                                override fun onActivityResultFail() {
+                                    Help.removeRequestCode(request = originalRequest)
+                                    callback.onError(
+                                        errorResult = RouterErrorResult(
+                                            originalRequest = originalRequest,
+                                            error = ActivityResultException(message = "activity result is fail")
+                                        )
+                                    )
+                                }
+
+                            }
+                        )
                         // 添加这个 requestCode 到 map, 重复的事情不用考虑了, 在 build RouterRequest 的时候已经处理了
-                        Help.addRequestCode(request = result.originalRequest)
+                        Help.addRequestCode(request = originalRequest)
                     }
 
                     override fun onError(errorResult: RouterErrorResult) {
@@ -823,7 +841,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
             scope = scope,
         )
         var originalRequest: RouterRequest? = null
-        scope.launch(context = Dispatchers.IO) {
+        scope.launch(context = Dispatchers.Main.immediate) {
             try {
                 // 如果用户没填写 Context 或者 Fragment 默认使用 Application
                 useDefaultContext()
@@ -895,6 +913,7 @@ class NavigatorImpl<T : INavigator<T>> constructor(
     @Throws(NavigationException::class)
     @CoreLogicAnno(value = "这是自动取消功能的核心实现")
     private suspend fun navigateWithAutoCancel(originalRequest: RouterRequest): RouterResult {
+        // 拿到生命周期的作用域的 scope
         val actScope = (originalRequest.context as? LifecycleOwner)?.lifecycleScope
         val fragScope = fragment?.lifecycleScope
         val scope = (actScope ?: fragScope)

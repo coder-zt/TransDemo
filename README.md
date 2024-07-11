@@ -40,11 +40,11 @@ class LoginAct: AppCompatActivity {
 
 ```Kotlin
 Router
-.with(context)
-.hostAndPath("user/login")
-.putString("name", "xiaojinzi")
-.putString("password", "123456")
-.forword()
+    .with(context)
+    .hostAndPath("user/login")
+    .putString("name", "xiaojinzi")
+    .putString("password", "123456")
+    .forword()
 ```
 
 更多的用法和更详细的解释请查看文档：[路由跳转](https://github.com/xiaojinzi123/KComponent/wiki/%E8%B7%AF%E7%94%B1%E8%B7%B3%E8%BD%AC) 和 [路由标记 @RouterAnno 的使用](https://github.com/xiaojinzi123/KComponent/wiki/RouterAnno-%E6%B3%A8%E8%A7%A3%E7%9A%84%E4%BD%BF%E7%94%A8)
