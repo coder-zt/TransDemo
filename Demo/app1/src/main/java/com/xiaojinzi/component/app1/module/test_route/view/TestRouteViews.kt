@@ -27,6 +27,7 @@ import com.xiaojinzi.component.bean.ActivityResult
 import com.xiaojinzi.component.impl.*
 import com.xiaojinzi.component.support.CallbackAdapter
 import com.xiaojinzi.support.ktx.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -313,7 +314,7 @@ private fun TestRouteView() {
                 }
             }
             ActionButton(text = "suspend 测试获取目标界面 ActivityResult") {
-                scope.launch(context = ErrorIgnoreContext) {
+                AppScope.launch(context = ErrorIgnoreContext + Dispatchers.Main) {
                     try {
                         val targetActivityResult = Router
                             .withApi(apiClass = RouterApi::class)
