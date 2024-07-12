@@ -33,11 +33,11 @@ version = "${versions.component_plugin_upload_version}"
 dependencies {
     implementation gradleApi()
     implementation localGroovy()
-    implementation "org.ow2.asm:asm-commons:9.6"
-    implementation "org.ow2.asm:asm-util:9.6"
-    implementation 'com.android.tools.build:gradle:8.2.2'
+    implementation "org.ow2.asm:asm-commons:9.7"
+    implementation "org.ow2.asm:asm-util:9.7"
+    implementation 'com.android.tools.build:gradle:8.5.0'
     // implementation 'com.android.tools.build:gradle:8.0.1'
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.google.code.gson:gson:2.11.0'
     implementation "com.joom.grip:grip:0.9.1"
     implementation "org.javassist:javassist:3.26.0-GA"
     implementation 'com.github.gundy:semver4j:0.16.4'
