@@ -5,6 +5,7 @@ import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -863,7 +864,7 @@ class ModuleProcessor(
                             is KSFunctionDeclaration -> {
                                 this.append("\ncustomerIntentCall = object : %T {")
                                 this.append("\n\toverride fun get(request: RouterRequest): %T {")
-                                this.append("\n\t\t\treturn %L(\n\t\t\t\t%N = request\n\t\t\t)")
+                                this.append("\n\t\t\treturn·%L(\n\t\t\t\t%N = request\n\t\t\t)")
                                 this.append("\n\t}")
                                 this.append("\n}")
                             }
@@ -1188,14 +1189,29 @@ class ModuleProcessor(
             .build()
 
         try {
-            codeGenerator.createNewFile(
-                dependencies = Dependencies.ALL_FILES,
-                packageName = fileSpec.packageName,
-                fileName = fileSpec.name,
-            ).use {
-                it.write(
-                    fileSpec.toString().toByteArray()
-                )
+            val listFile = mutableListOf<KSFile>()
+            listOf(
+                routerDegradeAnnotatedList,
+                routerAnnotatedList,
+                interceptorAnnotatedList,
+                moduleAppAnnotatedList,
+                serviceAnnotatedList,
+                serviceDecoratorAnnotatedList,
+                fragmentAnnotatedList,
+                globalInterceptorAnnotatedList
+            ).forEach {
+                listFile.addAll(it.map { it.containingFile }.filterNotNull())
+            }
+            if (listFile.isNotEmpty()) {
+                codeGenerator.createNewFile(
+                    dependencies = Dependencies(true, *listFile.toTypedArray()),
+                    packageName = fileSpec.packageName,
+                    fileName = fileSpec.name,
+                ).use {
+                    it.write(
+                        fileSpec.toString().toByteArray()
+                    )
+                }
             }
         } catch (e: Exception) {
             // ignore
