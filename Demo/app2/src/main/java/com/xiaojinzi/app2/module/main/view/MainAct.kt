@@ -14,6 +14,7 @@ import com.xiaojinzi.component.base.RouterConfig
 import com.xiaojinzi.component.base.spi.UserSpi
 import com.xiaojinzi.component.base.theme.CommonTheme
 import com.xiaojinzi.component.impl.Router
+import com.xiaojinzi.component.impl.RouterCenter
 import com.xiaojinzi.support.annotation.ViewLayer
 import com.xiaojinzi.support.architecture.mvvm1.BaseAct
 import com.xiaojinzi.support.compose.StateBar
@@ -44,6 +45,16 @@ class MainAct : BaseAct<MainViewModel>() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        println("onCreate ===>")
+        Router.with(this).url("testScheme://xxx/xxx").build().let {
+            println("onCreate ===> ${it.bundle}")
+            RouterCenter.routerRegExMap.forEach{
+                println("onCreate ===> routerRegEx ${it.key} ::::: ${it.value} ")
+            }
+            RouterCenter.getTarget(it.uri)?.let {
+                println("onCreate ===> $it")
+            }
+        }
         window.translateStatusBar()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 

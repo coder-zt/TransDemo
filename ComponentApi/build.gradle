@@ -5,8 +5,8 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 group = 'com.github.xiaojinzi123'
@@ -21,13 +21,27 @@ java {
     withJavadocJar()
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId project.group
-            artifactId archivesBaseName
-            version project.version
-            from components.java
+afterEvaluate {
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from(components["java"])
+                groupId = "com.shixiseng.KComponent"
+                artifactId = "kcomponent-annotation"
+                version = "v1.0.9"
+            }
         }
+
+        repositories {
+            maven {
+                url = uri("https://nexus.mshare.cn/repository/android/")
+                credentials {
+                    username = "adnroidDeveloper"
+                    password = "mx2021"
+                }
+            }
+        }
+
     }
 }

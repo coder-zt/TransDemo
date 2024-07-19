@@ -19,7 +19,7 @@ import com.xiaojinzi.support.ktx.translateStatusBar
 import kotlinx.coroutines.InternalCoroutinesApi
 
 @RouterAnno(
-    regex = "^(http|https)(.*)",
+//    regex = "^(http|https)(.*)",
     scheme = "testScheme",
     hostAndPath = "xxx/xxx",
 )

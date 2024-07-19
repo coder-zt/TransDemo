@@ -1,5 +1,6 @@
 package com.xiaojinzi.component.user.module.login.view
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import com.xiaojinzi.component.anno.RouterAnno
 import com.xiaojinzi.component.anno.UriAutowiredAnno
 import com.xiaojinzi.component.base.RouterConfig
 import com.xiaojinzi.component.base.theme.CommonTheme
+import com.xiaojinzi.component.impl.RouterRequest
 import com.xiaojinzi.support.annotation.ViewLayer
 import com.xiaojinzi.support.architecture.mvvm1.BaseAct
 import com.xiaojinzi.support.compose.StateBar
@@ -19,9 +21,9 @@ import com.xiaojinzi.support.ktx.initOnceUseViewModel
 import com.xiaojinzi.support.ktx.translateStatusBar
 import kotlinx.coroutines.InternalCoroutinesApi
 
-@RouterAnno(
-    hostAndPath = RouterConfig.USER_LOGIN,
-)
+//@RouterAnno(
+//    hostAndPath = RouterConfig.USER_LOGIN,
+//)
 @ViewLayer
 class LoginAct : BaseAct<LoginViewModel>() {
 
@@ -57,5 +59,6 @@ class LoginAct : BaseAct<LoginViewModel>() {
         }
 
     }
+
 
 }

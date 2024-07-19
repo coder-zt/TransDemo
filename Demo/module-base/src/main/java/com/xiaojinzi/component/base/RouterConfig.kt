@@ -19,7 +19,7 @@ object RouterConfig {
 
     const val HOST_USER = "user"
     const val USER_LOGIN = "$HOST_USER/login"
-    const val USER_USER_CENTER = "$HOST_USER/userCenter"
+    const val USER_USER_CENTER = "user://$HOST_USER/userCenter"
 
     const val HOST_BASE = "base"
 

@@ -5,18 +5,23 @@ apply plugin: 'kotlin-kapt'*/
 
 plugins {
     id 'com.android.application'
-    id 'com.xiaojinzi.kcomponent.plugin'
+//    id 'com.xiaojinzi.kcomponent.plugin'
     id 'kotlin-android'
     id 'com.google.devtools.ksp'
-    id 'kotlin-parcelize'
-    id 'kotlin-kapt'
+//    id 'kotlin-parcelize'
+//    id 'kotlin-kapt'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 apply from: "../demo_module.gradle"
 
-ksp {
-    arg("ModuleName", "app1")
-}
+//ksp {
+//    arg("ModuleName", "app1")
+//}
 
 /*kotlin {
     sourceSets.main {

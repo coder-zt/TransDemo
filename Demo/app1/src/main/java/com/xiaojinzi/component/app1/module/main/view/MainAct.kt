@@ -18,6 +18,7 @@ import com.xiaojinzi.component.base.spi.UserSpi
 import com.xiaojinzi.component.base.theme.CommonTheme
 import com.xiaojinzi.component.app1.module.main.domain.MainUseCase
 import com.xiaojinzi.component.impl.Router
+import com.xiaojinzi.component.impl.RouterCenter
 import com.xiaojinzi.support.annotation.ViewLayer
 import com.xiaojinzi.support.architecture.mvvm1.BaseAct
 import com.xiaojinzi.support.compose.StateBar
@@ -47,7 +48,6 @@ class MainAct : BaseAct<MainViewModel>() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         window.translateStatusBar()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 

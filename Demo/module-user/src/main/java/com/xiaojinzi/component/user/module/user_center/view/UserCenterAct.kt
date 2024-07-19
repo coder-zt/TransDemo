@@ -18,7 +18,10 @@ import com.xiaojinzi.support.ktx.translateStatusBar
 import kotlinx.coroutines.InternalCoroutinesApi
 
 @RouterAnno(
-    hostAndPath = RouterConfig.USER_USER_CENTER,
+    scheme = "user",
+//    hostAndPath = RouterConfig.USER_USER_CENTER,
+    host = "user",
+    path = "userCenter",
     interceptorNames = [RouterConfig.INTERCEPTOR_PERMISSION_LOGIN],
 )
 @ViewLayer

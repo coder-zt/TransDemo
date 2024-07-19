@@ -15,11 +15,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.pager.ExperimentalPagerApi
+import com.xiaojinzi.component.Component
+import com.xiaojinzi.component.Config
 import com.xiaojinzi.component.base.RouterConfig
 import com.xiaojinzi.component.base.view.ActionButton
 import com.xiaojinzi.component.base.view.AppbarNormal
 import com.xiaojinzi.component.impl.Router
 import com.xiaojinzi.component.impl.application.ModuleManager
+import com.xiaojinzi.support.init.AppInstance.app
 import com.xiaojinzi.support.ktx.nothing
 import com.xiaojinzi.support.ktx.toStringItemDto
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -106,7 +109,7 @@ private fun MainView() {
 
             ActionButton(text = "去用户中心") {
                 Router.with(context = context)
-                    .hostAndPath(hostAndPath = RouterConfig.USER_USER_CENTER)
+                    .url(RouterConfig.USER_USER_CENTER)
                     .forward()
             }
 
