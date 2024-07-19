@@ -1,15 +1,9 @@
 package com.xiaojinzi.component.impl
 
 import androidx.annotation.Keep
-import com.xiaojinzi.component.Component.requiredConfig
-import com.xiaojinzi.component.ComponentUtil
 import com.xiaojinzi.component.anno.support.CheckClassNameAnno
 import com.xiaojinzi.component.bean.RouterDegradeBean
-import com.xiaojinzi.component.router.IComponentCenterRouterDegrade
-import com.xiaojinzi.component.router.IComponentHostRouterDegrade
-import com.xiaojinzi.component.support.ASMUtil
 import com.xiaojinzi.component.support.RouterDegradeCache
-import com.xiaojinzi.component.support.Utils
 import java.util.*
 
 @Keep

@@ -53,7 +53,7 @@ object RouterCenter {
     /**
      * 保存映射关系的正则匹配的 map 集合
      */
-    private val routerRegExMap: MutableMap<String, RouterBean> = HashMap()
+    val routerRegExMap: MutableMap<String, RouterBean> = HashMap()
 
     /**
      * 保存映射关系的map集合
@@ -301,7 +301,7 @@ object RouterCenter {
         return result
     }
 
-    private fun getTarget(uri: Uri): RouterBean? {
+    fun getTarget(uri: Uri): RouterBean? {
         val targetKey: String = getTargetRouterKey(uri)
         for ((key, value) in routerRegExMap) {
             if (Pattern.matches(key, targetKey)) {

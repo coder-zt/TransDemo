@@ -3,12 +3,10 @@ package com.xiaojinzi.component.impl.application
 import android.app.Application
 import androidx.annotation.AnyThread
 import androidx.annotation.UiThread
-import com.xiaojinzi.component.Component
 import com.xiaojinzi.component.Component.check
 import com.xiaojinzi.component.Component.getApplication
 import com.xiaojinzi.component.Component.requiredConfig
 import com.xiaojinzi.component.ComponentUtil
-import com.xiaojinzi.component.application.IModuleNotifyChanged
 import com.xiaojinzi.component.cache.ClassCache
 import com.xiaojinzi.component.impl.IModuleLifecycle
 import com.xiaojinzi.component.impl.RouterCenter
@@ -16,10 +14,11 @@ import com.xiaojinzi.component.impl.RouterDegradeCenter
 import com.xiaojinzi.component.impl.fragment.FragmentCenter
 import com.xiaojinzi.component.impl.interceptor.InterceptorCenter
 import com.xiaojinzi.component.impl.service.ServiceManager
-import com.xiaojinzi.component.support.ASMUtil
 import com.xiaojinzi.component.support.LogUtil
 import com.xiaojinzi.component.support.Utils
+import java.io.IOException
 import java.util.*
+import kotlin.reflect.jvm.internal.impl.descriptors.NotFoundClasses
 
 /**
  * 这个类必须放在 [ComponentUtil.IMPL_OUTPUT_PKG] 包下面
@@ -35,9 +34,12 @@ object ModuleManager {
         var result: IModuleLifecycle? = null
         if (requiredConfig().isOptimizeInit) {
             LogUtil.log("\"$moduleName\" will try to load by bytecode")
-            result = ASMUtil.findModuleApplicationAsmImpl(
-                ComponentUtil.transformHostForClass(moduleName)
-            )
+            val c = Class.forName("com.xiaojinzi.component.support.ASMUtil")
+            c.constructors[0].newInstance()
+            val params = ComponentUtil.transformHostForClass(moduleName)
+            val m = c.getMethod("findModuleApplicationAsmImpl", String::class.java)
+
+            result = m.invoke(null, params) as IModuleLifecycle
         } else {
             LogUtil.log("\"$moduleName\" will try to load by reflection")
             try {
@@ -125,10 +127,17 @@ object ModuleManager {
         if (!requiredConfig().isOptimizeInit) {
             LogUtil.logw("you can't use this method to register module. Because you not turn on 'optimizeInit' by calling method 'Config.Builder.optimizeInit(true)' when you init")
         }
-        val moduleNames = ASMUtil.getModuleNames()
-        if (moduleNames.isNotEmpty()) {
-            registerArr(*moduleNames.toTypedArray())
+        try {
+            val c = Class.forName("com.xiaojinzi.component.support.ASMUtil")
+            val m = c.getMethod("getModuleNames")
+            val moduleNames = m.invoke(null) as List<String>
+            if (moduleNames.isNotEmpty()) {
+                registerArr(*moduleNames.toTypedArray())
+            }
+        } catch (e:ClassNotFoundException) {
+            e.printStackTrace()
         }
+
     }
 
     /**
